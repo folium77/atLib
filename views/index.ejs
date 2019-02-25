@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="UTF-8">
-        <title></title>
-    </head>
-    <body>
-        <form action="/post/" method="get">
-          <input type="text" name="isbn" placeholder="ISBNを入力">
-          <button>SEND</button>
-        </form>
-        <%- include("./item.ejs", books) %>
-    </body>
+  <head>
+    <meta charset="UTF-8">
+    <title></title>
+  </head>
+  <body>
+    <form action="/post/" method="get">
+      <input type="text" name="isbn" placeholder="ISBNを入力">
+      <button>SEND</button>
+    </form>
+    <%- include("./item.ejs", books) %>
+  </body>
 </html>

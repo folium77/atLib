@@ -2,6 +2,8 @@ const express = require('express');
 const app = express();
 const ejs = require('ejs');
 const func = require('./function.js');
+
+app.use(express.static('public'));
 app.set('views', `${__dirname}/views`);
 app.set('view engine', 'ejs');
 

@@ -26,21 +26,23 @@ exports.getBookNDC = (isbn, data) => {
       }
 
       /*
-        ・新刊はNDL9がない（国会図書館にない）場合があるので対策。
+        ・新刊はNDL9がない（国会図書館にない）場合があるので対策
         ・書影がない場合の対策（自分で入力できるようにする）
-        ・フリガナが取れないものもある 978-4778314378 など
+        ・フリガナが取れないものもある
       */
       const book = data[0].summary;
       const contributor = alphabetCheck(data[0].onix.DescriptiveDetail.Contributor);
       const personName = contributor.PersonName;
       const author = personName.content;
-      const author_kana = (personName.collationkey) ? personName.collationkey : author;
+      const author_kana = (personName.collationkey) ? personName.collationkey : '';
       const pubdate = new Date(book.pubdate.replace(/^(\d{4})(\d{2})(\d{2})/,'$1/$2/$3'));
       const supplyDetail = data[0].onix.ProductSupply.SupplyDetail.Price;
       const price = (supplyDetail) ? supplyDetail[0].PriceAmount : '';
       const cat = require('./ndc9.json');
       const $ = cheerio.load(res.text);
+      const ndl8 = $('dc\\:subject[xsi\\:type="dcndl:NDC8"]').eq(0).text();
       const ndl9 = $('dc\\:subject[xsi\\:type="dcndl:NDC9"]').eq(0).text();
+      const ndl = (ndl9) ? ndl9 : ndl8;
       const bookInfo = {
         'isbn'        : book.isbn,
         'title'       : book.title,
@@ -50,8 +52,8 @@ exports.getBookNDC = (isbn, data) => {
         'pub_date'    : pubdate,
         'price'　　　　: price,
         'cover'       : book.cover,
-        'ndl9'        : ndl9,
-        'category'    : cat[Math.floor(ndl9)],
+        'ndl'        : ndl,
+        'category'    : cat[ndl.slice(0,3)],
         'post_date'   : new Date()
       }
 
