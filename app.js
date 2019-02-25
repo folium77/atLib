@@ -4,6 +4,13 @@ const func = require('./function.js');
 
 app.get('/', (req, res) => {
 
+
+  func.selectDb(res);
+
+});
+
+app.get('/post', (req, res) => {
+
   const isbn = req.query.isbn;
 
   func.getBookInfo(isbn)
