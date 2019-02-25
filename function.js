@@ -78,8 +78,8 @@ exports.selectDb = (res) => {
     if (err) throw err;
     var dbo = db.db('atlib');
     //const find = {isbn: '9784003751091'}; 絞り込み時 find() にいれる。
-    //const sort {author_kana: 1}; //ソート
-    dbo.collection('books').find().sort().toArray(function(err, data) {
+    const sort = {post_date: -1}; //ソート
+    dbo.collection('books').find().sort(sort).toArray(function(err, data) {
       if (err) throw err;
       const books = {books: data};
       res.render('./index.ejs', books);

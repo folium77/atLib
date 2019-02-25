@@ -20,8 +20,10 @@ app.get('/post', (req, res) => {
       return func.getBookNDC(isbn, result);
     })
     .then((result) => {
-      res.send(result);
       func.insertDb(result);
+    })
+    .then(() => {
+      res.redirect(req.baseUrl + '/');
     })
     .catch((err) => {
       console.log('通信エラーです');
