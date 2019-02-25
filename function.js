@@ -81,7 +81,7 @@ exports.selectDb = (res) => {
     //const sort {author_kana: 1}; //ソート
     dbo.collection('books').find().sort().toArray(function(err, data) {
       if (err) throw err;
-      books = {books: data};
+      const books = {books: data};
       res.render('./index.ejs', books);
       db.close();
     });
