@@ -24,8 +24,7 @@ exports.getBookNDC = (isbn, data) => {
       if (err) {
         reject(err);
       }
-      const bookInfo = createBookInfo(data, res);
-      resolve(bookInfo);
+      resolve(createBookInfo(data, res));
     });
   });
 };
@@ -85,8 +84,7 @@ exports.selectDb = (res) => {
     const sort = {post_date: -1}; //ソート
     dbo.collection('books').find().sort(sort).toArray(function(err, data) {
       if (err) throw err;
-      const books = {books: data};
-      res.render('./index.ejs', books);
+      res.render('./index.ejs', {books: data});
       db.close();
     });
   });
