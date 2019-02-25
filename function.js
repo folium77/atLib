@@ -1,7 +1,7 @@
 const request = require('superagent');
 const cheerio = require('cheerio');
 const MongoClient = require('mongodb').MongoClient;
-const mongodbUrl = "mongodb://127.0.0.1:27017/";
+const dbUrl = "mongodb://127.0.0.1:27017/";
 
 // 書籍情報取得
 exports.getBookInfo = (isbn) => {
@@ -36,6 +36,8 @@ exports.getBookNDC = (isbn, data) => {
       const author = personName.content;
       const author_kana = (personName.collationkey) ? personName.collationkey : author;
       const pubdate = new Date(book.pubdate.replace(/^(\d{4})(\d{2})(\d{2})/,'$1/$2/$3'));
+      const supplyDetail = data[0].onix.ProductSupply.SupplyDetail.Price;
+      const price = (supplyDetail) ? supplyDetail[0].PriceAmount : '';
       const cat = require('./ndc9.json');
       const $ = cheerio.load(res.text);
       const ndl9 = $('dc\\:subject[xsi\\:type="dcndl:NDC9"]').eq(0).text();
@@ -45,7 +47,8 @@ exports.getBookNDC = (isbn, data) => {
         'author'      : author,
         'author_kana' : author_kana,
         'publisher'   : book.publisher,
-        'pub_date'     : pubdate,
+        'pub_date'    : pubdate,
+        'price'　　　　: price,
         'cover'       : book.cover,
         'ndl9'        : ndl9,
         'category'    : cat[Math.floor(ndl9)],
@@ -60,7 +63,7 @@ exports.getBookNDC = (isbn, data) => {
 
 // Contributorの最初がアルファベットだったらカタカナのものを返す
 const alphabetCheck = (contributors) => {
-  const regex  = /^[a-zA-Z\u00C0-\u017F]+(([',. -][a-zA-Z \u00C0-\u017F])?[a-zA-Z\u00C0-\u017F]*)*$/g; //アルファベットの人名に一致
+  const regex  = /^[a-zA-Z\u00C0-\u017F]+(([',\. -][a-zA-Z \u00C0-\u017F])?[',\. -][a-zA-Z\u00C0-\u017F]*)*$/g; //アルファベットの人名に一致
   const result = contributors.filter(val => {
     if ( val.PersonName.content.search(regex) === -1 && val.ContributorRole[0] === 'A01') {
       return val;
@@ -71,13 +74,15 @@ const alphabetCheck = (contributors) => {
 
 // SELECT DB
 exports.selectDb = (res) => {
-  MongoClient.connect(mongodbUrl, function(err, db) {
+  MongoClient.connect(dbUrl, (err, db) => {
     if (err) throw err;
     var dbo = db.db('atlib');
-    //var obj = {isbn: '9784003751091'}; 絞り込み時 find() にいれる。
-    dbo.collection('books').find().toArray(function(err, books) {
+    //const find = {isbn: '9784003751091'}; 絞り込み時 find() にいれる。
+    //const sort {author_kana: 1}; //ソート
+    dbo.collection('books').find().sort().toArray(function(err, data) {
       if (err) throw err;
-      res.send(books);
+      books = {books: data};
+      res.render('./index.ejs', books);
       db.close();
     });
   });
@@ -85,11 +90,10 @@ exports.selectDb = (res) => {
 
 // INSERT DB
 exports.insertDb = (data) => {
-  MongoClient.connect(mongodbUrl, function(err, db) {
+  MongoClient.connect(dbUrl, (err, db) => {
     if (err) throw err;
     const dbo = db.db('atlib');
     const obj = data;
-
     dbo.collection('books').insertOne(obj , function(err, res) {
       if (err) throw err;
       db.close();

@@ -1,0 +1,19 @@
+<ul>
+<% for (let book of books) { %>
+    <li class="col">
+      <% if (book.cover) { %>
+      <figure class="col-cover"><img src="<%- book.cover %>" alt="<%- book.title %>"></figure>
+      <% } %>
+      <div class="text-left">
+        <p class="col-title"><%- book.title %></p>
+        <p class="col-class">NDC：<%- book.ndl9 %>／<%- book.category %></p>
+        <p class="col-author"><%- book.author %><span class="col-author__kana">／<%- book.author_kana %></span></p>
+        <p class="col-publisher">出版社：<%- book.publisher %></p>
+        <p class="col-pubdate">発売日：<%- book.pub_date %></p>
+        <% if (book.price) { %>
+          <p class="col-pubdate">価格<%- book.price %></p>
+        <% } %>
+      </div>
+    </li>
+<% } %>
+</ul>
