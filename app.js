@@ -3,7 +3,6 @@ const app = express();
 //const ejs = require('ejs');
 const func = require('./function.js');
 
-
 // app.set('views', `${__dirname}/views`);
 // app.set('view engine', 'ejs');
 
