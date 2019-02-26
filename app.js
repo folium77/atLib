@@ -1,11 +1,19 @@
 const express = require('express');
 const app = express();
-const ejs = require('ejs');
+//const ejs = require('ejs');
 const func = require('./function.js');
 
-app.use(express.static('public'));
+
+// app.set('views', `${__dirname}/views`);
+// app.set('view engine', 'ejs');
+
+const reactViews = require('express-react-views');
+const options = { beautify: true };
 app.set('views', `${__dirname}/views`);
-app.set('view engine', 'ejs');
+app.set('view engine', 'jsx');
+app.engine('jsx', reactViews.createEngine(options));
+
+app.use(express.static('public'));
 
 app.get('/', (req, res) => {
   func.selectDb(req, res);

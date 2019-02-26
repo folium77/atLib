@@ -85,7 +85,8 @@ exports.selectDb = (req, res) => {
     const sort = {post_date: -1};
     dbo.collection('books').find(find).sort(sort).toArray((err, data) => {
       if (err) throw err;
-      res.render('./index.ejs', {books: data});
+      //res.render('./index.ejs', {books: data});
+      res.render('index', {books: data});
       db.close();
     });
   });
