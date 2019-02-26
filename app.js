@@ -8,15 +8,11 @@ app.set('views', `${__dirname}/views`);
 app.set('view engine', 'ejs');
 
 app.get('/', (req, res) => {
-
   func.selectDb(req, res);
-
 });
 
 app.get('/post', (req, res) => {
-
   const isbn = req.query.isbn;
-
   func.getBookInfo(isbn)
     .then((result,reee) => {
       if (result[0]) {
@@ -28,16 +24,19 @@ app.get('/post', (req, res) => {
         func.insertDb(result);
         res.redirect(req.baseUrl + '/');
       } else {
-        res.redirect(req.baseUrl + '/');
+        res.redirect(req.baseUrl + '/?notfound=1');
       }
-    })
-    .then(() => {
-
     })
     .catch((err) => {
       console.log('通信エラーです');
     });
+});
 
+app.get('/delete', (req, res) => {
+  const isbn = req.query.isbn;
+  const ndl = req.query.ndl;
+  func.deleteDb(isbn, ndl);
+  res.redirect(req.baseUrl + '/');
 });
 
 app.listen(3000);

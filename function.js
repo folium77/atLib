@@ -75,10 +75,12 @@ const createBookInfo = (data, res) => {
   }
 };
 
+// TODO : MongoClient.connectは一回で済ますようにまとめること
+
 exports.selectDb = (req, res) => {
   MongoClient.connect(dbUrl, (err, db) => {
     if (err) throw err;
-    var dbo = db.db('atlib');
+    const dbo = db.db('atlib');
     const find = req.query;
     const sort = {post_date: -1};
     dbo.collection('books').find(find).sort(sort).toArray((err, data) => {
@@ -92,23 +94,43 @@ exports.selectDb = (req, res) => {
 // INSERT DB
 exports.insertDb = (data) => {
   MongoClient.connect(dbUrl, (err, db) => {
-
     if (err) throw err;
     const dbo = db.db('atlib');
-    const obj = data;
-    dbo.collection('books').insertOne(obj , (err, res)  => {
+    const dataObj = data;
+    dbo.collection('books').insertOne(dataObj , (err, res)  => {
       if (err) throw err;
       db.close();
     });
 
     // categoryのcountを増やす
     const id = data.ndl.slice(0,3);
-    const where = {cotegory_id: id};
+    const cotegoryObj = {cotegory_id: id};
     const set = {$inc: {count: 1}};
-    dbo.collection('category').updateOne(where, set, (err, res) => {
+    dbo.collection('category').updateOne(cotegoryObj, set, (err, res) => {
+      if (err) throw err;
+      db.close();
+    });
+  });
+};
+
+// DELETE DB
+exports.deleteDb = (isbn, ndl) => {
+  MongoClient.connect(dbUrl, (err, db) => {
+    if (err) throw err;
+    const dbo = db.db('atlib');
+    const isbnObj = {isbn: isbn};
+    dbo.collection('books').deleteOne(isbnObj, (err, res) => {
       if (err) throw err;
       db.close();
     });
 
+    // categoryのcountを減らす
+    const id = ndl.slice(0,3);
+    const cotegoryObj = {cotegory_id: id};
+    const set = {$inc: {count: -1}};
+    dbo.collection('category').updateOne(cotegoryObj, set, (err, res) => {
+      if (err) throw err;
+      db.close();
+    });
   });
 };
