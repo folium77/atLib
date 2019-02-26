@@ -69,20 +69,19 @@ const createBookInfo = (data, res) => {
     'pub_date'    : pubdate,
     'price'　　　　: price,
     'cover'       : book.cover,
-    'ndl'        : ndl,
+    'ndl'         : ndl,
     'category'    : cat[ndl.slice(0,3)],
     'post_date'   : new Date()
   }
 };
 
-// SELECT DB
-exports.selectDb = (res) => {
+exports.selectDb = (req, res) => {
   MongoClient.connect(dbUrl, (err, db) => {
     if (err) throw err;
     var dbo = db.db('atlib');
-    //const find = {isbn: '9784003751091'}; 絞り込み時 find() にいれる。
-    const sort = {post_date: -1}; //ソート
-    dbo.collection('books').find().sort(sort).toArray(function(err, data) {
+    const find = req.query;
+    const sort = {post_date: -1};
+    dbo.collection('books').find(find).sort(sort).toArray((err, data) => {
       if (err) throw err;
       res.render('./index.ejs', {books: data});
       db.close();
@@ -93,12 +92,23 @@ exports.selectDb = (res) => {
 // INSERT DB
 exports.insertDb = (data) => {
   MongoClient.connect(dbUrl, (err, db) => {
+
     if (err) throw err;
     const dbo = db.db('atlib');
     const obj = data;
-    dbo.collection('books').insertOne(obj , function(err, res) {
+    dbo.collection('books').insertOne(obj , (err, res)  => {
       if (err) throw err;
       db.close();
     });
+
+    // categoryのcountを増やす
+    const id = data.ndl.slice(0,3);
+    const where = {cotegory_id: id};
+    const set = {$inc: {count: 1}};
+    dbo.collection('category').updateOne(where, set, (err, res) => {
+      if (err) throw err;
+      db.close();
+    });
+
   });
 };
