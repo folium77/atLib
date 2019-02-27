@@ -81,11 +81,11 @@ exports.selectDb = (req, res) => {
   MongoClient.connect(dbUrl, (err, db) => {
     if (err) throw err;
     const dbo = db.db('atlib');
-    const find = req.query;
+    const get = req.query.get;
+    const find = ( get === 'category') ? {count : {$gte: 1}} : {};
     const sort = {post_date: -1};
-    dbo.collection('books').find(find).sort(sort).toArray((err, data) => {
+    dbo.collection(get).find(find).sort(sort).toArray((err, data) => {
       if (err) throw err;
-      //res.render('./index.ejs', {books: data});
       res.send(data);
       db.close();
     });
