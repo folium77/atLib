@@ -11,8 +11,8 @@ server.get('/', function(req, res) {
 });
 
 //Get book data
-server.get('/get', (req, res) => {
-  func.selectDb(req, res);
+server.get('/api', (req, res) => {
+  func.selectDb(req, res,);
 });
 
 //Posted book data
