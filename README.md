@@ -4,6 +4,7 @@
 
 * Node.js
 * React
+* MongoDB
 
 ## 機能
 
