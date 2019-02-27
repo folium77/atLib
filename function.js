@@ -75,8 +75,8 @@ const createBookInfo = (data, res) => {
   }
 };
 
-// TODO : MongoClient.connectは一回で済ますようにまとめること
 
+// SELECT DB
 exports.selectDb = (req, res) => {
   MongoClient.connect(dbUrl, (err, db) => {
     if (err) throw err;
