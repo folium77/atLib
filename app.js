@@ -1,24 +1,22 @@
 const express = require('express');
-const app = express();
-//const ejs = require('ejs');
+const server = express();
+const path = require('path');
 const func = require('./function.js');
 
-// app.set('views', `${__dirname}/views`);
-// app.set('view engine', 'ejs');
+// correspond Express and React
+server.use(express.static(path.join(__dirname, 'build')));
 
-const reactViews = require('express-react-views');
-const options = { beautify: true };
-app.set('views', `${__dirname}/views`);
-app.set('view engine', 'jsx');
-app.engine('jsx', reactViews.createEngine(options));
+server.get('/', function(req, res) {
+  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+});
 
-app.use(express.static('public'));
-
-app.get('/', (req, res) => {
+//Get book data
+server.get('/get', (req, res) => {
   func.selectDb(req, res);
 });
 
-app.get('/post', (req, res) => {
+//Posted book data
+server.get('/post', (req, res) => {
   const isbn = req.query.isbn;
   func.getBookInfo(isbn)
     .then((result,reee) => {
@@ -39,12 +37,13 @@ app.get('/post', (req, res) => {
     });
 });
 
-app.get('/delete', (req, res) => {
+//Deleting book data
+server.get('/delete', (req, res) => {
   const isbn = req.query.isbn;
   const ndl = req.query.ndl;
   func.deleteDb(isbn, ndl);
   res.redirect(req.baseUrl + '/');
 });
 
-app.listen(3000);
+server.listen(3000);
 console.log('Server running at http://localhost:3000/');
