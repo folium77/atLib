@@ -6,7 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "react-scripts build",
-    "start": "nodemon app.js"
+    "react": "react-scripts start",
+    "start": "nodemon app.js",
+    "watch": "watch 'npm run build && npm run build-dist' src"
   },
   "author": "",
   "license": "ISC",

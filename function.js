@@ -4,7 +4,7 @@ const MongoClient = require('mongodb').MongoClient;
 const dbUrl = "mongodb://127.0.0.1:27017/";
 
 // 書籍情報取得
-exports.getBookInfo = (isbn) => {
+getBookInfo = (isbn) => {
   const baseUrl = `https://api.openbd.jp/v1/get?isbn=${isbn}`;
   return new Promise((resolve, reject) => {
    request.get(baseUrl).end((err, res) => {
@@ -17,7 +17,7 @@ exports.getBookInfo = (isbn) => {
 };
 
 // 分類名取得
-exports.getBookNDC = (isbn, data) => {
+getBookNDC = (isbn, data) => {
   const baseUrl = `http://iss.ndl.go.jp/api/opensearch?mediatype=1&isbn=${isbn}`;
   return new Promise((resolve, reject) => {
    request.get(baseUrl).buffer().end((err, res) => {
@@ -27,6 +27,28 @@ exports.getBookNDC = (isbn, data) => {
       resolve(createBookInfo(data, res));
     });
   });
+};
+
+// 書籍を登録
+exports.postedBook = (req, res) => {
+  const isbn = req.query.isbn;
+  getBookInfo(isbn)
+    .then((result) => {
+      if (result[0]) {
+        return getBookNDC(isbn, result);
+      }
+    })
+    .then((result) => {
+      if (result) {
+        insertDb(result);
+        res.redirect(req.baseUrl + '/');
+      } else {
+        res.redirect(req.baseUrl + '/?notfound=1');
+      }
+    })
+    .catch((err) => {
+      console.log('通信エラーです');
+    });
 };
 
 // Contributorの最初がアルファベットだったらカタカナのものを返す
@@ -52,7 +74,7 @@ const createBookInfo = (data, res) => {
   const personName = contributor.PersonName;
   const author = personName.content;
   const author_kana = (personName.collationkey) ? personName.collationkey : '';
-  const pubdate = new Date(book.pubdate.replace(/^(\d{4})(\d{2})(\d{2})/,'$1/$2/$3'));
+  const pubdate = book.pubdate.replace(/^(\d{4})(\d{2})(\d{2})/,'$1/$2/$3');
   const supplyDetail = data[0].onix.ProductSupply.SupplyDetail.Price;
   const price = (supplyDetail) ? supplyDetail[0].PriceAmount : '';
   const cat = require('./ndc9.json');
@@ -66,7 +88,7 @@ const createBookInfo = (data, res) => {
     'author'      : author,
     'author_kana' : author_kana,
     'publisher'   : book.publisher,
-    'pub_date'    : pubdate,
+    'pub_date'    : new Date(pubdate),
     'price'　　　　: price,
     'cover'       : book.cover,
     'ndl'         : ndl,
@@ -75,30 +97,15 @@ const createBookInfo = (data, res) => {
   }
 };
 
-
-// SELECT DB
-exports.selectDb = (req, res) => {
-  MongoClient.connect(dbUrl, (err, db) => {
-    if (err) throw err;
-    const dbo = db.db('atlib');
-    const get = req.query.get;
-    const find = ( get === 'category') ? {count : {$gte: 1}} : {};
-    const sort = {post_date: -1};
-    dbo.collection(get).find(find).sort(sort).toArray((err, data) => {
-      if (err) throw err;
-      res.send(data);
-      db.close();
-    });
-  });
-};
-
 // INSERT DB
-exports.insertDb = (data) => {
+insertDb = (data) => {
   MongoClient.connect(dbUrl, (err, db) => {
     if (err) throw err;
     const dbo = db.db('atlib');
     const dataObj = data;
-    dbo.collection('books').insertOne(dataObj , (err, res)  => {
+    console.log(data.isbn);
+    dbo.collection('books')
+    .insertOne(dataObj , (err, res)  => {
       if (err) throw err;
       db.close();
     });
@@ -114,11 +121,29 @@ exports.insertDb = (data) => {
   });
 };
 
-// DELETE DB
-exports.deleteDb = (isbn, ndl) => {
+// SELECT DB
+exports.selectDb = (req, res) => {
   MongoClient.connect(dbUrl, (err, db) => {
     if (err) throw err;
     const dbo = db.db('atlib');
+    const get = req.query.get;
+    const find = ( get === 'category') ? {count : {$gte: 1}} : {};
+    const sort = ( get === 'category') ? {cotegory_id: 1} : {post_date: -1};
+    dbo.collection(get).find(find).sort(sort).toArray((err, data) => {
+      if (err) throw err;
+      res.send(data);
+      db.close();
+    });
+  });
+};
+
+// DELETE DB
+exports.deleteDb = (req, res) => {
+  MongoClient.connect(dbUrl, (err, db) => {
+    if (err) throw err;
+    const dbo = db.db('atlib');
+    const isbn = req.query.isbn;
+    const ndl = req.query.ndl;
     const isbnObj = {isbn: isbn};
     dbo.collection('books').deleteOne(isbnObj, (err, res) => {
       if (err) throw err;
