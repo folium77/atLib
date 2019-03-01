@@ -8,9 +8,7 @@ getBookInfo = (isbn) => {
   const baseUrl = `https://api.openbd.jp/v1/get?isbn=${isbn}`;
   return new Promise((resolve, reject) => {
    request.get(baseUrl).end((err, res) => {
-      if (err) {
-        reject(err);
-      }
+      if (err) reject(err);
       resolve(res.body);
     });
   })
@@ -21,9 +19,7 @@ getBookNDC = (isbn, data) => {
   const baseUrl = `http://iss.ndl.go.jp/api/opensearch?mediatype=1&isbn=${isbn}`;
   return new Promise((resolve, reject) => {
    request.get(baseUrl).buffer().end((err, res) => {
-      if (err) {
-        reject(err);
-      }
+      if (err) reject(err);
       resolve(createBookInfo(data, res));
     });
   });
@@ -40,8 +36,7 @@ exports.postedBook = (req, res) => {
     })
     .then((result) => {
       if (result) {
-        insertDb(result);
-        res.redirect(req.baseUrl + '/');
+        insertDb(res, req, result);
       } else {
         res.redirect(req.baseUrl + '/?notfound=1');
       }
@@ -98,12 +93,13 @@ const createBookInfo = (data, res) => {
 };
 
 // INSERT DB
-insertDb = (data) => {
-  MongoClient.connect(dbUrl, (err, db) => {
-    if (err) throw err;
+insertDb = (res, req, data) => {
+  MongoClient.connect(dbUrl, (connectErr, db) => {
+    if (connectErr) throw connectErr;
     const dbo = db.db('atlib');
-    dbo.collection('books').insertOne(data , (err, res)  => {
-      if (err) console.log(err);
+    dbo.collection('books').insertOne(data , (dboErr, dboRes)  => {
+      if (dboErr) console.log(dboErr);
+      res.send(dboRes.ops);
       db.close();
     });
 
@@ -111,8 +107,8 @@ insertDb = (data) => {
     const id = data.ndl.slice(0,3).replace(/^0{1,2}/, '');
     const cotegory = {cotegory_id: Number(id)};
     const set = {$inc: {count: 1}};
-    dbo.collection('category').updateOne(cotegory, set, (err, res) => {
-      if (err) throw err;
+    dbo.collection('categories').updateOne(cotegory, set, (dboErr, dboRes) => {
+      if (dboErr) throw dboErr;
       db.close();
     });
   });
@@ -120,12 +116,12 @@ insertDb = (data) => {
 
 // DELETE DB
 exports.deleteDb = (req, res) => {
-  MongoClient.connect(dbUrl, (err, db) => {
-    if (err) throw err;
+  MongoClient.connect(dbUrl, (connectErr, db) => {
+    if (connectErr) throw connectErr;
     const dbo = db.db('atlib');
     const isbn = {isbn: req.query.isbn};
-    dbo.collection('books').deleteOne(isbn, (err, res) => {
-      if (err) throw err;
+    dbo.collection('books').deleteOne(isbn, (dboErr, dboRes) => {
+      if (dboErr) throw dboErr;
       db.close();
     });
 
@@ -133,8 +129,9 @@ exports.deleteDb = (req, res) => {
     const id = req.query.ndl.slice(0,3).replace(/^0{1,2}/, '');
     const cotegory = {cotegory_id: Number(id)};
     const set = {$inc: {count: -1}};
-    dbo.collection('category').updateOne(cotegory, set, (err, res) => {
-      if (err) throw err;
+    dbo.collection('categories').updateOne(cotegory, set, (dboErr, dboRes) => {
+      if (dboErr) throw dboErr;
+      res.redirect(req.baseUrl + '/');
       db.close();
     });
   });
@@ -142,15 +139,15 @@ exports.deleteDb = (req, res) => {
 
 // SELECT DB
 exports.selectDb = (req, res) => {
-  MongoClient.connect(dbUrl, (err, db) => {
-    if (err) throw err;
+  MongoClient.connect(dbUrl, (connectErr, db) => {
+    if (connectErr) throw connectErr;
     const dbo = db.db('atlib');
     const get = req.query.get;
-    const find = ( get === 'category') ? {count : {$gte: 1}} : {};
-    const sort = ( get === 'category') ? {cotegory_id: 1} : {post_date: -1};
-    dbo.collection(get).find(find).sort(sort).toArray((err, data) => {
-      if (err) throw err;
-      res.send(data);
+    const find = ( get === 'categories') ? {count : {$gte: 1}} : {};
+    const sort = ( get === 'categories') ? {cotegory_id: 1} : {post_date: -1};
+    dbo.collection(get).find(find).sort(sort).toArray((dboErr, dboRes) => {
+      if (dboErr) throw dboErr;
+      res.send(dboRes);
       db.close();
     });
   });

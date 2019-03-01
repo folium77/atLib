@@ -12,7 +12,7 @@ server.get('/', function(req, res) {
 
 //Get book data
 server.get('/api', (req, res) => {
-  func.selectDb(req, res,);
+  func.selectDb(req, res);
 });
 
 //Posted book data
@@ -23,7 +23,6 @@ server.get('/post', (req, res) => {
 //Deleting book data
 server.get('/delete', (req, res) => {
   func.deleteDb(req, res);
-  res.redirect(req.baseUrl + '/');
 });
 
 server.listen(3000);

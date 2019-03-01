@@ -8,7 +8,7 @@ MongoClient.connect(dbUrl, (err, db) => {
   const dbo = db.db('atlib');
   const obj = cat;
   dbo.collection('books').createIndex({isbn: 1}, {unique: true});
-  dbo.collection('category').insert(obj , (err, res)  => {
+  dbo.collection('categories').insert(obj , (err, res)  => {
     if (err) throw err;
     db.close();
   });
