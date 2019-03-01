@@ -102,19 +102,38 @@ insertDb = (data) => {
   MongoClient.connect(dbUrl, (err, db) => {
     if (err) throw err;
     const dbo = db.db('atlib');
-    const dataObj = data;
-    console.log(data.isbn);
-    dbo.collection('books')
-    .insertOne(dataObj , (err, res)  => {
-      if (err) throw err;
+    dbo.collection('books').insertOne(data , (err, res)  => {
+      if (err) console.log(err);
       db.close();
     });
 
     // categoryのcountを増やす
-    const id = data.ndl.slice(0,3);
-    const cotegoryObj = {cotegory_id: id};
+    const id = data.ndl.slice(0,3).replace(/^0{1,2}/, '');
+    const cotegory = {cotegory_id: Number(id)};
     const set = {$inc: {count: 1}};
-    dbo.collection('category').updateOne(cotegoryObj, set, (err, res) => {
+    dbo.collection('category').updateOne(cotegory, set, (err, res) => {
+      if (err) throw err;
+      db.close();
+    });
+  });
+};
+
+// DELETE DB
+exports.deleteDb = (req, res) => {
+  MongoClient.connect(dbUrl, (err, db) => {
+    if (err) throw err;
+    const dbo = db.db('atlib');
+    const isbn = {isbn: req.query.isbn};
+    dbo.collection('books').deleteOne(isbn, (err, res) => {
+      if (err) throw err;
+      db.close();
+    });
+
+    // categoryのcountを減らす
+    const id = req.query.ndl.slice(0,3).replace(/^0{1,2}/, '');
+    const cotegory = {cotegory_id: Number(id)};
+    const set = {$inc: {count: -1}};
+    dbo.collection('category').updateOne(cotegory, set, (err, res) => {
       if (err) throw err;
       db.close();
     });
@@ -132,30 +151,6 @@ exports.selectDb = (req, res) => {
     dbo.collection(get).find(find).sort(sort).toArray((err, data) => {
       if (err) throw err;
       res.send(data);
-      db.close();
-    });
-  });
-};
-
-// DELETE DB
-exports.deleteDb = (req, res) => {
-  MongoClient.connect(dbUrl, (err, db) => {
-    if (err) throw err;
-    const dbo = db.db('atlib');
-    const isbn = req.query.isbn;
-    const ndl = req.query.ndl;
-    const isbnObj = {isbn: isbn};
-    dbo.collection('books').deleteOne(isbnObj, (err, res) => {
-      if (err) throw err;
-      db.close();
-    });
-
-    // categoryのcountを減らす
-    const id = ndl.slice(0,3);
-    const cotegoryObj = {cotegory_id: id};
-    const set = {$inc: {count: -1}};
-    dbo.collection('category').updateOne(cotegoryObj, set, (err, res) => {
-      if (err) throw err;
       db.close();
     });
   });
