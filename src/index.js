@@ -40,7 +40,7 @@ class App extends React.Component{
                 <p class="col-class">NDC：{book.ndl}／{book.category}</p>
                 <p class="col-author">{book.author}<span class="col-author__kana">／{book.author_kana}</span></p>
                 <p class="col-publisher">出版社：{book.publisher}</p>
-                {/*<p class="col-pubdate">発売日：{date}</p>*/}
+                <p class="col-pubdate">発売日：{book.pub_date}</p>
                 <div>
                   <form action="/delete/" method="get">
                     <input type="hidden" name="isbn" value={book.isbn} />
