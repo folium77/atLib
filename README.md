@@ -1,12 +1,12 @@
 # atLib
 
-## 仕様
+## 技術スタック
 
 * Node.js
 * React
 * MongoDB
 
-## 技術スタック
+## 機能
 
 * openBDから書籍情報を取得、国会図書館のAPIから「日本十進分類」を取得してMongoDBに登録
 * 登録した情報をReactで一覧表示
