@@ -11,8 +11,10 @@ class Content extends React.Component{
     };
   }
 
-  async fetchData() {
-    const booksRes = await fetch('/api/?get=books');
+  async fetchData(cotegory) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const category = urlParams.get('category');
+    const booksRes = await fetch(`/api/?get=books&category=${category}`);
     const booksJson = await booksRes.json();
     const categoriesRes = await fetch('/api/?get=categories');
     const categoriesJson = await categoriesRes.json();
@@ -31,14 +33,18 @@ class Content extends React.Component{
     this.setState({ value: e.target.value })
   }
 
-  async doSubmit (e, fn) {
+  // handleClick (e, cotegory) {
+  //   e.preventDefault();
+  //   const pageUrl = `category=${cotegory}`;
+  //   window.history.pushState('', '', pageUrl);
+  //   onClick={(e) => this.handleClick(e, category.id)}
+  // }
+
+  async doSubmit (e, fn, isbn, ndl) {
     e.preventDefault();
     if (fn === 'post') {
       const testRes = await fetch(`/post/?isbn=${this.state.value}`);
     } else {
-      const input = e.target.children;
-      const isbn = input.isbn.value;
-      const ndl = input.ndl.value;
       const testRes = await fetch(`/delete/?isbn=${isbn}&ndl=${ndl}`);
     }
     this.fetchData();
@@ -71,9 +77,7 @@ class Content extends React.Component{
                   <p class="col-publisher">出版社：{book.publisher}</p>
                   <p class="col-pubdate">発売日：{book.pub_date}</p>
                   <div>
-                    <form onSubmit={e => this.doSubmit(e, 'delete')}>
-                      <input type="hidden" name="isbn" value={book.isbn} />
-                      <input type="hidden" name="ndl" value={book.ndl} />
+                    <form onSubmit={e => this.doSubmit(e, 'delete', book.isbn, book.ndl)}>
                       <button>DELETE</button>
                     </form>
                   </div>
@@ -84,8 +88,9 @@ class Content extends React.Component{
         </div>
         <div class="categories">
           <ul>
+            <li class="col"><a href="/">すべて</a></li>
             {categories.map((category, index) =>
-              <li class="col">{category.name}（{category.count}）</li>
+              <li class="col"><a href={`?category=${category.id}`}>{category.name}</a>（{category.count}）</li>
             )}
           </ul>
         </div>
