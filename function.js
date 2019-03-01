@@ -4,7 +4,7 @@ const MongoClient = require('mongodb').MongoClient;
 const dbUrl = "mongodb://127.0.0.1:27017/";
 
 // 書籍情報取得
-getBookInfo = (isbn) => {
+const getBookInfo = (isbn) => {
   const baseUrl = `https://api.openbd.jp/v1/get?isbn=${isbn}`;
   return new Promise((resolve, reject) => {
    request.get(baseUrl).end((err, res) => {
@@ -15,7 +15,7 @@ getBookInfo = (isbn) => {
 };
 
 // 分類名取得
-getBookNDC = (isbn, data) => {
+const getBookNDC = (isbn, data) => {
   const baseUrl = `http://iss.ndl.go.jp/api/opensearch?mediatype=1&isbn=${isbn}`;
   return new Promise((resolve, reject) => {
    request.get(baseUrl).buffer().end((err, res) => {
@@ -77,6 +77,7 @@ const createBookInfo = (data, res) => {
   const ndl8 = $('dc\\:subject[xsi\\:type="dcndl:NDC8"]').eq(0).text();
   const ndl9 = $('dc\\:subject[xsi\\:type="dcndl:NDC9"]').eq(0).text();
   const ndl = (ndl9) ? ndl9 : ndl8;
+  const ndlIndex = ndl.slice(0,3);
   return {
     'isbn'        : book.isbn,
     'title'       : book.title,
@@ -87,28 +88,32 @@ const createBookInfo = (data, res) => {
     'price'　　　　: price,
     'cover'       : book.cover,
     'ndl'         : ndl,
-    'category'    : cat[ndl.slice(0,3)],
-    'post_date'   : new Date()
+    'category'    : cat[ndlIndex],
+    'post_date'   : new Date(),
+    'cotegory_id' : Number(ndlIndex)
   }
 };
 
 // INSERT DB
-insertDb = (res, req, data) => {
+const insertDb = (res, req, data) => {
   MongoClient.connect(dbUrl, (connectErr, db) => {
     if (connectErr) throw connectErr;
     const dbo = db.db('atlib');
     dbo.collection('books').insertOne(data , (dboErr, dboRes)  => {
-      if (dboErr) console.log(dboErr);
-      res.send(dboRes.ops);
+      if (dboErr) {
+        console.log(dboErr);
+      } else {
+        res.send(dboRes.ops);
+      }
       db.close();
     });
 
     // categoryのcountを増やす
     const id = data.ndl.slice(0,3).replace(/^0{1,2}/, '');
-    const cotegory = {cotegory_id: Number(id)};
+    const cotegory = {id: Number(id)};
     const set = {$inc: {count: 1}};
     dbo.collection('categories').updateOne(cotegory, set, (dboErr, dboRes) => {
-      if (dboErr) throw dboErr;
+      if (dboErr) console.log(dboErr);
       db.close();
     });
   });
@@ -127,7 +132,7 @@ exports.deleteDb = (req, res) => {
 
     // categoryのcountを減らす
     const id = req.query.ndl.slice(0,3).replace(/^0{1,2}/, '');
-    const cotegory = {cotegory_id: Number(id)};
+    const cotegory = {id: Number(id)};
     const set = {$inc: {count: -1}};
     dbo.collection('categories').updateOne(cotegory, set, (dboErr, dboRes) => {
       if (dboErr) throw dboErr;
@@ -143,8 +148,9 @@ exports.selectDb = (req, res) => {
     if (connectErr) throw connectErr;
     const dbo = db.db('atlib');
     const get = req.query.get;
-    const find = ( get === 'categories') ? {count : {$gte: 1}} : {};
-    const sort = ( get === 'categories') ? {cotegory_id: 1} : {post_date: -1};
+    const category = req.query.category;
+    const find = ( get === 'categories')? {count : {$gte: 1}} : (category !== undefined && category.search(/\d{1,3}/) === 0) ? {cotegory_id: Number(category)} : {};
+    const sort = ( get === 'categories') ? {id: 1} : {post_date: -1};
     dbo.collection(get).find(find).sort(sort).toArray((dboErr, dboRes) => {
       if (dboErr) throw dboErr;
       res.send(dboRes);
