@@ -98,7 +98,7 @@ const createBookInfo = (data, res) => {
 
 const dbFilter = (get, category) => {
 
-  let filter = '';
+  let filter;
   if (get === 'categories') {
     filter = {$or: [{count: {$gte: 1}} , {count: {$gte: 1}, parent: -1}]};
   } else if (category !== undefined && category.search(/(\d{2})0/) === 0) {

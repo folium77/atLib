@@ -1,7 +1,7 @@
 var React = require('react');
 var ReactDOM = require('react-dom');
 
-class GetTheCategory extends React.Component{
+class ListCategories extends React.Component{
 
   renderCategories (data) {
     const categories = [];
@@ -87,12 +87,6 @@ class Content extends React.Component{
   // }
 
   async doSubmit (e, fn, isbn, ndl) {
-    e.preventDefault();
-    if (fn === 'post') {
-      const testRes = await fetch(`/post/?isbn=${this.state.value}`);
-    } else {
-      const testRes = await fetch(`/delete/?isbn=${isbn}&ndl=${ndl}`);
-    }
     this.fetchData();
   }
 
@@ -132,7 +126,7 @@ class Content extends React.Component{
             )}
           </ul>
         </div>
-        <GetTheCategory categories={this.state.categories} />
+        <ListCategories categories={this.state.categories} />
       </React.Fragment>
     );
   }
