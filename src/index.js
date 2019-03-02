@@ -4,27 +4,19 @@ var ReactDOM = require('react-dom');
 class GetTheCategory extends React.Component{
 
   renderCategories (data) {
-    const parents = [];
-    const children = [];
     const categories = [];
 
-    data.forEach((category, index) => {
-      const id = category.id;
+    let x = 0;
+    let y = 0;
+    data.forEach(category => {
       if (category.parent === -1) {
-        parents.push(category);
+        categories[x] = Object.assign(category, {children:[]});
+        x++;
+        y = 0;
       } else {
-        children.push(category);
+        categories[x-1]['children'][y] = category;
+        y++;
       }
-    });
-
-    parents.forEach(category => {
-      const id = category.id;
-      const array = Object.assign(category, {children:[]});
-      const child = children.filter(val => val.parent === id);
-      child.forEach((val, i) =>{
-        array['children'][i] = val;
-      });
-      categories.push(array);
     });
 
     const list = categories.map(category => {
