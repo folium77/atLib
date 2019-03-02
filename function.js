@@ -98,7 +98,7 @@ const createBookInfo = (data, res) => {
 
 const dbFilter = (get, category) => {
 
-  let filter = '';
+  let filter;
   if (get === 'categories') {
     filter = {$or: [{count: {$gte: 1}} , {count: {$gte: 1}, parent: -1}]};
   } else if (category !== undefined && category.search(/(\d{2})0/) === 0) {
@@ -177,7 +177,7 @@ exports.selectDb = (req, res) => {
     const get = req.query.get;
     const category = req.query.category;
     const find = dbFilter(get, category);
-    const sort = ( get === 'categories') ? {id: 1} : {post_date: -1};
+    const sort = ( get === 'categories') ? {id: 1} : {post_date: 1};
     dbo.collection(get).find(find).sort(sort).toArray((dboErr, dboRes) => {
       if (dboErr) throw dboErr;
       res.send(dboRes);

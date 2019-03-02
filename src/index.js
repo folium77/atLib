@@ -1,7 +1,7 @@
-var React = require('react');
-var ReactDOM = require('react-dom');
+const React = require('react');
+const ReactDOM = require('react-dom');
 
-class GetTheCategory extends React.Component{
+class ListCategories extends React.Component{
 
   renderCategories (data) {
     const categories = [];
@@ -75,6 +75,14 @@ class Content extends React.Component{
     this.fetchData();
   }
 
+  shouldComponentUpdate(nextProps, nextState) {
+    if (nextProps.length !== nextState.length) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+
   doChange (e) {
     this.setState({ value: e.target.value })
   }
@@ -89,16 +97,24 @@ class Content extends React.Component{
   async doSubmit (e, fn, isbn, ndl) {
     e.preventDefault();
     if (fn === 'post') {
-      const testRes = await fetch(`/post/?isbn=${this.state.value}`);
+      const postRes = await fetch(`/post/?isbn=${this.state.value}`);
+      const postJson = await postRes.json();
+      this.setState({
+        books: [...this.state.books, postJson[0]]
+      });
     } else {
-      const testRes = await fetch(`/delete/?isbn=${isbn}&ndl=${ndl}`);
+      const deleteRes = await fetch(`/delete/?isbn=${isbn}&ndl=${ndl}`);
     }
-    this.fetchData();
+    //this.fetchData();
   }
 
   render(){
     const books = this.state.books;
     const categories = this.state.categories;
+    const listStyle = {
+      display: 'flex',
+      flexDirection: 'column-reverse'
+    }
     return(
       <React.Fragment>
         <form onSubmit={e => this.doSubmit(e, 'post')}>
@@ -110,7 +126,7 @@ class Content extends React.Component{
           <input type="submit" />
         </form>
         <div class="books">
-          <ul>
+          <ul style={listStyle}>
             {books.map((book, index) =>
               <li class="col">
                 <figure class="col-cover">
@@ -132,7 +148,7 @@ class Content extends React.Component{
             )}
           </ul>
         </div>
-        <GetTheCategory categories={this.state.categories} />
+        <ListCategories categories={this.state.categories} />
       </React.Fragment>
     );
   }
