@@ -78,6 +78,7 @@ const createBookInfo = (data, res) => {
   const ndl9 = $('dc\\:subject[xsi\\:type="dcndl:NDC9"]').eq(0).text();
   const ndl = (ndl9) ? ndl9 : ndl8;
   const ndlIndex = ndl.slice(0,3);
+  const parentCotegoryId = ndlIndex.replace(/(\d{2})\d/,'$10');
   return {
     'isbn'        : book.isbn,
     'title'       : book.title,
@@ -90,8 +91,28 @@ const createBookInfo = (data, res) => {
     'ndl'         : ndl,
     'category'    : cat[ndlIndex],
     'post_date'   : new Date(),
-    'cotegory_id' : Number(ndlIndex)
+    'cotegory_id' : Number(ndlIndex),
+    'parent_cotegory_id' : Number(parentCotegoryId),
   }
+};
+
+const dbFilter = (get, category) => {
+
+  let filter = '';
+  if (get === 'categories') {
+    filter = {$or: [{count: {$gte: 1}} , {count: {$gte: 1}, parent: -1}]};
+  } else if (category !== undefined && category.search(/(\d{2})0/) === 0) {
+    const gte = category.replace(/(\d{2})(\d)/, '$11');
+    const lte = category.replace(/(\d{2})(\d)/, '$19');
+    filter = { cotegory_id : { $gte : Number(gte), $lte : Number(lte) } };
+  } else if (category !== undefined && category.search(/\d{1,3}/) === 0) {
+    filter = {cotegory_id: Number(category)}
+  } else {
+    filter = {};
+  }
+
+  return filter;
+
 };
 
 // INSERT DB
@@ -102,17 +123,22 @@ const insertDb = (res, req, data) => {
     dbo.collection('books').insertOne(data , (dboErr, dboRes)  => {
       if (dboErr) {
         console.log(dboErr);
+        throw dboErr;
       } else {
         res.send(dboRes.ops);
       }
       db.close();
     });
 
+    /**
+    重複登録時にcountが増えないよう対策
+    */
     // categoryのcountを増やす
     const id = data.ndl.slice(0,3).replace(/^0{1,2}/, '');
-    const cotegory = {id: Number(id)};
+    const parent = id.replace(/(\d{2})\d/,'$10');
+    const cotegory = {$or: [{id: Number(id)}, {id: Number(parent)}]};
     const set = {$inc: {count: 1}};
-    dbo.collection('categories').updateOne(cotegory, set, (dboErr, dboRes) => {
+    dbo.collection('categories').updateMany(cotegory, set, (dboErr, dboRes) => {
       if (dboErr) console.log(dboErr);
       db.close();
     });
@@ -132,9 +158,10 @@ exports.deleteDb = (req, res) => {
 
     // categoryのcountを減らす
     const id = req.query.ndl.slice(0,3).replace(/^0{1,2}/, '');
-    const cotegory = {id: Number(id)};
+    const parent = id.replace(/(\d{2})\d/,'$10');
+    const cotegory = {$or: [{id: Number(id)}, {id: Number(parent)}]};
     const set = {$inc: {count: -1}};
-    dbo.collection('categories').updateOne(cotegory, set, (dboErr, dboRes) => {
+    dbo.collection('categories').updateMany(cotegory, set, (dboErr, dboRes) => {
       if (dboErr) throw dboErr;
       res.redirect(req.baseUrl + '/');
       db.close();
@@ -149,7 +176,7 @@ exports.selectDb = (req, res) => {
     const dbo = db.db('atlib');
     const get = req.query.get;
     const category = req.query.category;
-    const find = ( get === 'categories')? {count : {$gte: 1}} : (category !== undefined && category.search(/\d{1,3}/) === 0) ? {cotegory_id: Number(category)} : {};
+    const find = dbFilter(get, category);
     const sort = ( get === 'categories') ? {id: 1} : {post_date: -1};
     dbo.collection(get).find(find).sort(sort).toArray((dboErr, dboRes) => {
       if (dboErr) throw dboErr;

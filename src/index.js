@@ -1,6 +1,60 @@
 var React = require('react');
 var ReactDOM = require('react-dom');
 
+class GetTheCategory extends React.Component{
+
+  renderCategories (data) {
+    const parents = [];
+    const children = [];
+    const categories = [];
+
+    data.forEach((category, index) => {
+      const id = category.id;
+      if (category.parent === -1) {
+        parents.push(category);
+      } else {
+        children.push(category);
+      }
+    });
+
+    parents.forEach(category => {
+      const id = category.id;
+      const array = Object.assign(category, {children:[]});
+      const child = children.filter(val => val.parent === id);
+      child.forEach((val, i) =>{
+        array['children'][i] = val;
+      });
+      categories.push(array);
+    });
+
+    const list = categories.map(category => {
+      return (
+        <li class="col">
+          <a href={`?category=${category.id}`}>{category.name}</a>（{category.count}）
+          <ul>
+            {category.children.map(category =>
+              <li class="col"><a href={`?category=${category.id}`}>{category.name}</a>（{category.count}）</li>
+            )}
+          </ul>
+        </li>
+      )
+    });
+
+    return list;
+
+  };
+
+  render() {
+    const categories = this.props.categories;
+    return (
+      <div class="categories">
+        {this.renderCategories(categories)}
+      </div>
+    )
+  }
+
+}
+
 class Content extends React.Component{
   constructor(props) {
     super(props);
@@ -86,14 +140,7 @@ class Content extends React.Component{
             )}
           </ul>
         </div>
-        <div class="categories">
-          <ul>
-            <li class="col"><a href="/">すべて</a></li>
-            {categories.map((category, index) =>
-              <li class="col"><a href={`?category=${category.id}`}>{category.name}</a>（{category.count}）</li>
-            )}
-          </ul>
-        </div>
+        <GetTheCategory categories={this.state.categories} />
       </React.Fragment>
     );
   }
